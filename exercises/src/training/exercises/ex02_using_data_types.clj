@@ -10,8 +10,7 @@
 ;; ========================================
 
 (str "str is an operator that takes string" " arugments and concatenates them")
-
-
+(str "testing " "one " " two")
 
 ;; ========================================
 ;; Control flow
@@ -20,6 +19,8 @@
 (if true
   "Verily your word is your bond"
   "Knave! Liar! Cur!")
+
+(if nil "true" "false")
 
 (if true
   (do (println "Do wraps up multiple expressions")
@@ -59,6 +60,11 @@
       (= 1 1) "one equals one"
       :else   "is nothing true!?!?!?")
 
+(cond (= 1 0) "abc"
+      false "what"
+      false "abc"
+      :else 4)
+
 ;; ========================================
 ;; def and let
 ;; ========================================
@@ -86,7 +92,10 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 ;; You try:
 ;; * Use def, then use let to 'shadow' the def'd symbol
 
-
+(def x 4)
+(let [x 6
+      y (+ x 3)]
+     y)
 
 ;; ========================================
 ;; Numbers & Arithmetic
@@ -97,7 +106,9 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 
 ;; You try:
 ;; * Add 5 numbers
+(+ 3 5 6 2 4 2)
 ;; * Multiply 3 numbers
+(* 3 5 6)
 
 
 
@@ -109,7 +120,7 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 
 ;; You try:
 ;; * upper-case a line from your favorite song
-
+(str/upper-case "no one man should have all that power")
 
 
 ;; ========================================
@@ -122,7 +133,10 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 :? ; <= that's a keyword too
 (:first-name {:first-name ""})
 
-
+(def me {:first-name "Brooks" :last-name "Noble"})
+me
+(:first-name me)
+(-> me :first-name)
 
 ;; ========================================
 ;; Maps
@@ -165,6 +179,10 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 ;; * Use get-in to get just the first name
 ;; * Use assoc-in to 'change' the first name
 
+(def bob { :name {:first-name "Bob" :last-name "Billy"} :age 42 })
+(get bob :name)
+(get-in bob [:name :first-name])
+(assoc-in bob [:name :first-name])
 
 
 ;; ========================================
@@ -184,21 +202,41 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 
 (concat [:a :b] [:c :d])
 
+
+(vec {:a 1 :b 2})
+(conj [1 2 3] 4)
+(conj '(1 2 3) 4)
+
 ;; Try these functions:
 ;; * first
+(first [ 1 2 3 ])
 ;; * rest
+(rest [ 1 2 3 ])
+
 ;; * take 
+(take 2 [ 1 2 3 ])
+
 ;; * assoc
+
+
 ;; * nth
 
+(defn multiply [x y] (* x y))
+(def triple (multiply 3))
+(def triple #(multiply 3 %))
+(triple 2)
 
+(def double-num (fn [x] (* x 2)))
+(double-num 4)
+(def double-everything (fn [xs] (mapv double-num xs)))
+(double-everything [1 2 3])
 
 ;; ========================================
 ;; Exercise: Points
 ;; ========================================
 ;; * Represent a point on plane
-
-
+(def point { :x 4 :y 6 })
+point
 
 ;; ========================================
 ;; Lists
@@ -215,8 +253,12 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 
 ;; Try these functions:
 ;; * first
+(first '(1 2 3))
 ;; * rest
+(rest '(:a :b :c))
 ;; * empty?
+(empty? '())
+(empty? '(:a))
 
 ;; ========================================
 ;; Sets
@@ -242,4 +284,7 @@ training.exercises.ex02-using-data-types/failed-protagonist-names
 
 ;; Try this:
 ;; * Use the set/difference function
+(set/difference #{:a :b} #{:a})
+(set/difference #{:a} #{:a :b})
 ;; * Convert a set to a vector
+(into [] #{:a :b})

@@ -46,7 +46,13 @@
 ;; Exercise: write a function number-max that compares two numbers and returns
 ;; the larger.
 
+(defn number-max 
+  "Compares two numbers and returns the larger"
+  [a b]
+  (if (> a b) a b))
 
+(number-max 1 5)
+(number-max 5 1)
 
 ;; ========================================
 ;; Functions are values
@@ -64,8 +70,7 @@
   [x op y]
   (op x y))
 (mathochist 1 / 3)
-
-
+(mathochist 1 + 3)
 
 ;; ========================================
 ;; Anonymous functions

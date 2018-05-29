@@ -55,9 +55,33 @@
 
 ;; You try:
 ;; * Use map and filter together: first map a vector, then filter it
-;; * Use reduce to select the largest number from a vector
-;; * Implement map in terms of first, rest, and cons
+(def a (range 10))
+a
+(def b (map #(* % 2) a))
+b
+(def c (filter #(< % 8) b))
+c
 
+
+;; * Use reduce to select the largest number from a vector
+(def nums [ 1 4 6 23 5 30 2 1 -1 ])
+nums
+(def largest-num (reduce (fn [a b] (if (< a b) b a)) nums))
+largest-num
+
+
+;; * Implement map in terms of first, rest, and cons
+; Can only recur from tail position
+(defn my-map 
+  [f coll]
+  (if (empty? coll)
+    coll
+    (cons (f (first coll)) (my-map f (rest coll)))))
+
+(def nums [ 1 4 6 23 5 30 2 1 -1 ])
+nums
+(def doubled (my-map #(* 2 %) nums))
+doubled
 
 
 ;; ========================================
@@ -99,9 +123,29 @@
 (occupied? [])
 
 ;; You try:
-;; * Implement complement
-;; * Implement partial
 ;;  Hint: use apply
+;; * Implement complement
+(defn my-complement 
+  [f]
+  (fn [ & args ] (not (apply f args))))
+(def odd?' (my-complement even?))
+
+(odd?' 1)
+(odd?' 2)
+
+
+;; * Implement partial
+(defn my-partial 
+  [f & partial-args]
+  (fn [ & args ] 
+    (apply f (concat partial-args args))))
+
+(def inc3 (my-partial + 3))
+
+(inc3 5)
+(inc3 10)
+
+
 
 
 
@@ -125,3 +169,5 @@
 
 ;; You try:
 ;; * Create a lazy sequence of all even numbers
+(def all-evens (map #(* % 2) (range)))
+(take 20 all-evens)

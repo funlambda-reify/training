@@ -35,7 +35,6 @@
 (let [{:keys [width height]} image]
   (* width height))
 
-
 (defn format-coords
   [{:keys [lat lng] :as point}]
   (str "lat " lat ", lng " lng " in " point))
@@ -45,7 +44,13 @@
 ;; Use destructuring to reference the first and second elements of
 ;; this vector and addthem
 [0 1 2 3 4]
+(def arr [0 1 2 3 4])
+(let [[a b] arr]
+     (+ a b))
 
 ;; Use destructuring to create the string "Jebediah is a butter churner"
 {:name "Jebediah"
  :occupation "butter churner"}
+(def person-info {:name "Jebediah" :occupation "butter churner"})
+(let [{:keys [name occupation]} person-info]
+     (str name " is a " occupation))
