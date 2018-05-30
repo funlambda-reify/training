@@ -25,7 +25,7 @@
 ;; You try:
 ;; * get the index of the first occurrence of a substring
 ;;   https://docs.oracle.com/javase/7/docs/api/java/lang/String.html
-
+(.indexOf "fried rice" "rice")
 
 ;; If you want to do multiple things to an object, there's the `doto`
 ;; macro:

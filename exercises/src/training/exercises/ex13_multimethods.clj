@@ -31,6 +31,8 @@
 (defmethod moderator? clojure.lang.IPersistentMap
   [m] (moderator? (:username m)))
 
+(moderator? "bob")
+(moderator? "chris")
 
 
 ;; can dispatch on any transformation of any or all arguments
@@ -97,7 +99,60 @@
 
 ;; You try:
 ;; * Create a method that handles radio buttons
+(defmethod input :radio
+  [_ {:keys [options name value]}]
+  (let [selected-value value]
+    (into [:div {}]
+      (mapv (fn [{:keys [value label]}]
+                [ :div 
+                  [ :input { :type "radio" 
+                              :selected (= selected-value value)
+                              :name name}]
+                  [ :label label ] ])
+            options))))
+
+(h/html
+  (input :radio {:value "HI"
+                 :name "state"
+                 :options [{:label "Alaska" :value "Ak"}
+                           {:label "Hawaii" :value "HI"}]}))
+
 ;; * Create a method that handles check boxes
+(defmethod input :checkboxes
+  [_ {:keys [options name values]}]
+  (into [:div {}]
+    (mapv (fn [{:keys [value label]}]
+              [ :div 
+                [ :input { :type "checkbox" 
+                            :selected (if (some #(= value %) values) "selected" "")
+                            :name name}]
+                [ :label label ] ])
+          options)))
+
+(h/html
+  (input :checkboxes {:values ["HI"]
+                      :name "state"
+                      :options [{:label "Alaska" :value "AK"}
+                                {:label "Hawaii" :value "HI"}]}))
+
 ;; * Create a method that takes :date as its type, and produces
 ;;   select dropdowns for month, day, and year
+(defmethod input :date
+  [_ {:keys [options name value]}]
+  (let [ a value ]
+    "sdf"))
+
+(h/html (input :select {:value   "HI"
+                        :options (mapv #{} (range 1 12))})
+
+
+  input :date {:value []}))
+
+
+(def double #(* 2 %))
+(double 4)
+(def wrap (fn [ a ] { :wrapped true :value a }))
+(def wrap #{ :wrapped true :value % })
+(def wrap #({ :wrapped true :value % }))
+(wrap "hello")
 

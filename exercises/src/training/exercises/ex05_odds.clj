@@ -13,35 +13,19 @@
 ;; It's definitely doable using just the functions and operators that
 ;; you've seen so far. Have fun :)
 
-; Q1: Should (odds 3 4 4) return 1/6 or 1/8?
-; Q2: Review each version and discuss.
+; TODO: Try implementing with for expression
 
 (defn odds
     [sum sides-a sides-b]
-    (->> (range 1 (inc sides-a))
-         (mapv (fn [a] (mapv (fn [b] [a b]) (range 1 (inc sides-b)))))
-         (reduce concat)
-         (mapv (fn [[a b]] (+ a b)))
-         ((fn [roll-sums] 
-            (let [num-correct (count (filterv #(= % sum) roll-sums))
-                  num-total (count roll-sums)]
-                 (/ num-correct num-total))))))
+    (let [roll-sums (->> (for [x (range 1 (inc sides-a))
+                               y (range 1 (inc sides-b))] [x y])
+                         (mapv (partial apply +)))
+          num-correct (count (filterv #(= % sum) roll-sums))
+          num-total (count roll-sums)]
+      (/ num-correct num-total)))
 
 (odds 3 6 6)
 (odds 3 4 4)
-
-(defn odds-2
-    [sum sides-a sides-b]
-    (let [dice-a-possibilties (range 1 (inc sides-a))
-          dice-b-possibilties (range 1 (inc sides-b))
-          combined-possibilities (reduce concat (mapv (fn [a] (mapv (fn [b] [a b]) dice-b-possibilties)) dice-a-possibilties))
-          sums (mapv (fn [[a b]] (+ a b)) combined-possibilities)
-          total-count (count sums)
-          correct-count (count (filterv #(= % sum) sums))]
-         (/ correct-count total-count)))
-
-(odds-2 3 6 6)
-(odds-2 3 4 4)
 
 (defn odds-3
     ([ sum sides-a sides-b [ i j num-matches num-total ] ]

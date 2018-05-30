@@ -50,7 +50,11 @@ map
 ;; You try:
 ;; * Write some code to handle postfix evaluation, like:
 ;;   (eval (postfix 1 2 +))
+(defn postfix 
+  [ [ x y op ] ]
+  (list op x y))
 
+(eval (postfix '(2 4 +)))
 
 ;; ========================================
 ;; Eval rules
@@ -158,6 +162,7 @@ x
   [test & body]
   (list 'if test (cons 'do body)))
 
+(when' true "yes" "no")
 
 
 ;; ========================================
@@ -305,6 +310,28 @@ x
   )
 
 
+(def character
+  {:name "Smooches McCutes"
+    :attributes {:intelligence 10
+                :strength 4
+                :dexterity 5}})
+
+(defmacro defattrs
+  [ & list ]
+    `(do ~@(map (fn [[f a]] `(def ~f (comp ~a :attributes))) (partition 2 list))))
+
+(defn c-int [x] "wrong!")
+
+(def code 
+  '(defattrs
+    c-int :intelligence
+    c-str :strength
+    c-dex :dexterity))
+
+(macroexpand-1 code)
+(eval code)
+(c-int character)
+
 ;; Bonus
 ;; `and` is a macro:
 
@@ -322,3 +349,12 @@ x
         (if and# (and ~@next) and#)))))
 
 ;; study it till you understand it, and optionally implement or as a macro
+
+(defmacro or'
+  ([] true)
+  ([x] x)
+  ([x & next]
+    `(let [aa# ~x]
+        (if aa# (or' ~@next) aa#))))
+
+(or' (do (println "first") false) (do (println "second") true))
