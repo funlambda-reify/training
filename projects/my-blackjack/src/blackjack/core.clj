@@ -1,23 +1,8 @@
 (ns blackjack.core
   (:gen-class)
   (:require [clojure.string :as str]
-            [clojure.set :as set]))
-
-(defn parse-int [s]
-  (try (Integer/parseInt s)
-    (catch Exception e nil)))
-
-(defn parse-one-of [options s]
-  (if (some #{s} options) s nil))
-
-(defn ask-until-valid-response
-  [question parse-func]
-  (loop [] 
-    (println question)
-    (let [parsed (parse-func (read-line))]
-      (if (= parsed nil)
-        (do (println "Invalid input!") (recur))
-        parsed))))
+            [clojure.set :as set]
+            [blackjack.util :as util]))
 
 (defn hand->string
   [hand]
@@ -86,16 +71,15 @@
 
 (defn require-status 
   [state status]
-    (if (not= (:status state) status) (throw (Exception. "Invalid action for current game state"))))
+    (if (not= (:status state) status) 
+        (throw (Exception. (str "Invalid action for current game state. Expected " status " but got " (:status state))))))
 
 (defmulti handle-action (fn [ [ action-type ] state ] action-type))
 (defmethod handle-action :start-new-round
   [ [ _ bet-amount ] state ]
-  (require-status state :waiting-for-bet)
+  (require-status state :round-over)
   (assoc state
-    :status :start-new-round 
-    :current-bet bet-amount
-    :player-money (- (:player-money state) bet-amount)))
+    :status :waiting-for-bet))
 (defmethod handle-action :make-bet
   [ [ _ bet-amount ] state ]
   (require-status state :waiting-for-bet)
@@ -135,8 +119,9 @@
 (defmethod handle-action :dealer-play
   [ [ _ ] state ]
   (require-status state :dealer-turn)
-  (loop [state state] ; Take cards until (highest poss.) dealer score is >= 17
-    (if (>= (last (:dealer-poss-scores state)) 17)
+  (loop [state state] ; Take cards until bust or (highest poss.) dealer score is >= 17
+    (if (or (empty? (:dealer-poss-scores state)) 
+            (>= (last (:dealer-poss-scores state)) 17))
         (let [ dealer-busted (empty? (get-valid-scores (possible-hand-scores (:dealer-hand state)))) ]
           (assoc state 
             :status (if dealer-busted :winner-determined :dealer-done)
@@ -150,10 +135,10 @@
               :dealer-hand dealer-hand
               :dealer-poss-scores poss-hand-scores))))))
 (defmethod handle-action :compare-scores
-  [ [ _ ] state] 
+  [ [ _ ] state ]
   (require-status state :dealer-done)
   (let [player-score (last (:player-poss-scores state))
-        dealer-score (last (:player-poss-scores state))]
+        dealer-score (last (:dealer-poss-scores state))]
     (assoc state
       :status :winner-determined
       :round-result (cond (> player-score dealer-score) [ :player-won :higher-score ]
@@ -167,17 +152,27 @@
     :current-bet 0
     :player-money (case (first (:round-result state))
                       :player-won (+ (:player-money state) (* 2 (:current-bet state)))
-                      :tie (+ (:player-money state) (* 2 (:current-bet state)))
+                      :tied (+ (:player-money state) (:current-bet state))
                       :player-lost (:player-money state))))
 (defmethod handle-action :default
   [ action _ ] 
   (throw (Exception. (str "Unsupported action: " action))))
 
+
+(defn print-game
+  [ state hide-dealer-card ]
+  (let [ display-dealer-cards (if hide-dealer-card [ (first (:dealer-hand state)) ] (:dealer-hand state))]
+    (println "-----")
+    (println "Your hand: " (str (hand->string (:player-hand state)) " (" (str/join " or " (:player-poss-scores state)) ")"))
+    (println (str "Dealer hand: " (hand->string display-dealer-cards) (if hide-dealer-card " ??" "")))
+    (println (str "Bet: " (:current-bet state)))
+    (println "-----")))
+
 (defmulti handle-io-for-state (fn [ { :keys [ status ]}] status))
 (defmethod handle-io-for-state :waiting-for-bet
   [ state ]
   (println (str "You have " (:player-money state)))
-  (let [response (ask-until-valid-response "How much do you want to bet? " parse-int)]
+  (let [response (util/ask-until-valid-response "How much do you want to bet? " util/parse-int)]
     [:make-bet response]))
 (defmethod handle-io-for-state :ready-to-deal
   [ state ]
@@ -186,12 +181,8 @@
   [:deal-hands])
 (defmethod handle-io-for-state :player-turn
   [ state ]
-  (println "-----")
-  (println "Your hand: " (str (hand->string (:player-hand state)) " (" (str/join " or " (:player-poss-scores state)) ")"))
-  (println (str "Dealer hand: " (hand->string (rest (:dealer-hand state))))) ; hide one dealer card
-  (println (str "Bet: " (:current-bet state)))
-  (println "-----")
-  (let [response (ask-until-valid-response "(h)it or (s)tand?" (partial parse-one-of [ "h" "s" ]))]
+  (print-game state true)
+  (let [response (util/ask-until-valid-response "(h)it or (s)tand?" (partial util/parse-one-of [ "h" "s" ]))]
       (cond 
         (= response "h") [ :player-hit ]
         (= response "s") [ :player-stand ]
@@ -204,13 +195,13 @@
 (defmethod handle-io-for-state :dealer-done
   [ state ]
   (println "Dealer done playing. Comparing scores...")
-  (Thread/sleep 2000)
   [ :compare-scores ])
 (defmethod handle-io-for-state :winner-determined
   [ state ]
+  (print-game state false)  
   (let [[ result reason ] (:round-result state)
         result-msg (case result :player-won "You won" :tied "Game tied" :player-lost "You lost")
-        reason-msg (case reason :player-busted "because you busted" :higher-score "because of higher score" :dealer-busted "because dealer busted")]
+        reason-msg (case reason nil "" :player-busted "because you busted" :higher-score "because of higher score" :dealer-busted "because dealer busted")]
     (println (str result-msg " " reason-msg)))
   (println "Settling money...")
   (Thread/sleep 2000)
@@ -218,7 +209,7 @@
 (defmethod handle-io-for-state :round-over
   [ state ]
   (println "Round over.")
-  (let [response (ask-until-valid-response "Play another round? (y/n)" (partial parse-one-of [ "y" "n" ]))]
+  (let [response (util/ask-until-valid-response "Play another round? (y/n)" (partial util/parse-one-of [ "y" "n" ]))]
     (if (= response "y") [ :start-new-round ] nil)))
 (defmethod handle-io-for-state :default
   [ state ]
@@ -234,11 +225,3 @@
 (defn -main
   []
   (game-loop initial-state))
-
-; Next Steps
-; 0. Fix bugs and get console app working
-; 1. Create one separate file to practice namespace
-; 2. Add some unit tests (use clojure.test)
-; 3. Use spec for state map? (just a few keys)
-; 4. Review and adjust code after reading Clojure style guides
-; 5. Convert to front-end app using re-frame
